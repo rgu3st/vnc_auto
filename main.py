@@ -33,7 +33,8 @@ class comms:
 	def client_listen_for_info(self):
 		'''Client-side'''
 		print(f"Waiting for a vnc server on {SUBNET}.255:{self.UDP_PORT}...")
-		self.sock.bind(('192.168.0.255', self.UDP_PORT))  # The 'broadcast' ip should be sub.net.addr.255.
+		broadcast_ip = SUBNET + ".255"
+		self.sock.bind((broadcast_ip, self.UDP_PORT))  # The 'broadcast' ip should be sub.net.addr.255.
 		data, addr = self.sock.recvfrom(1024)  # I'm pretty sure this is blocking: which I want here...
 		print(f"Got server info: {data.decode('utf8')} from {addr}")	
 		return data.decode('utf8')
