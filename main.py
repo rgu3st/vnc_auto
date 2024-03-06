@@ -43,11 +43,6 @@ class client:
 	def __init__(self):
 		self.server_infos = []	
 
-
-	serverip = "192.168.0.3"
-	port = 5900
-	vnc_viewer_command = f"vncviewer {serverip}::{port}"
-
 	def start(self):
 
 		com = comms("c")  # Too hackey: TODO: something better!
@@ -55,7 +50,12 @@ class client:
 		if server_info is None:
 			print("Error receiving server info.")
 			return None
-		self.server_infos.append(server_info)
+		if server_info not in self.server_infos:
+			self.server_infos.append(server_info)
+		server_ip = server_info.split()[0]
+		vnc_port = server_info.split()[1]
+		vnc_viewer_command = f"vncviewer {server_ip}::{vnc_port}"
+		# print(f"vncviewer command: {vnc_viewer_command}")
 		subprocess.run(client.vnc_viewer_command.split())
 
 class server:
