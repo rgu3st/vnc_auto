@@ -57,7 +57,7 @@ class client:
 		vnc_port = server_info.split()[1]
 		vnc_viewer_command = f"vncviewer {server_ip}::{vnc_port}"
 		# print(f"vncviewer command: {vnc_viewer_command}")
-		subprocess.run(client.vnc_viewer_command.split())
+		subprocess.run(vnc_viewer_command.split())
 
 class server:
 	def __init__(self):
