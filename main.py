@@ -43,21 +43,21 @@ class comms:
 class client:
 	def __init__(self):
 		self.server_infos = []	
-
-	def start(self):
-
 		com = comms("c")  # Too hackey: TODO: something better!
-		server_info = com.client_listen_for_info()
-		if server_info is None:
-			print("Error receiving server info.")
-			return None
-		if server_info not in self.server_infos:
-			self.server_infos.append(server_info)
-		server_ip = server_info.split()[0]
-		vnc_port = server_info.split()[1]
-		vnc_viewer_command = f"vncviewer {server_ip}::{vnc_port}"
-		# print(f"vncviewer command: {vnc_viewer_command}")
-		subprocess.run(vnc_viewer_command.split())
+
+	def run_main_loop(self):
+		while(True):
+			server_info = com.client_listen_for_info()
+			if server_info is None:
+				print("Error receiving server info.")
+				return None
+			if server_info not in self.server_infos:
+				self.server_infos.append(server_info)
+			server_ip = server_info.split()[0]
+			vnc_port = server_info.split()[1]
+			vnc_viewer_command = f"vncviewer {server_ip}::{vnc_port}"
+			subprocess.run(vnc_viewer_command.split())
+
 
 class server:
 	def __init__(self):
@@ -94,7 +94,7 @@ class server:
 
 	def start(self):
 		is_running = True
-		subprocess.run(server.vnc_start_command.split())  # TODO: uncomment when ready to actually run VNC!
+		subprocess.run(server.vnc_start_command.split()) 
 		while is_running:
 			self.broadcast_server_info()
 			time.sleep(BROADCAST_INTERVAL)
@@ -112,7 +112,7 @@ def main(args):
 			server.stop()
 	elif args.c:
 		clie = client()
-		clie.start()	
+		clie.run_main_loop()	
 
 
 if __name__ == "__main__":
