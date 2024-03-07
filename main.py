@@ -43,11 +43,11 @@ class comms:
 class client:
 	def __init__(self):
 		self.server_infos = []	
-		com = comms("c")  # Too hackey: TODO: something better!
+		self.com = comms("c")  # Too hackey: TODO: something better!
 
 	def run_main_loop(self):
 		while(True):
-			server_info = com.client_listen_for_info()
+			server_info = self.com.client_listen_for_info()
 			if server_info is None:
 				print("Error receiving server info.")
 				return None
