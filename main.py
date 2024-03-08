@@ -3,9 +3,11 @@ import time
 import argparse
 import socket
 import netifaces
+import threading
 
 BROADCAST_INTERVAL =  6  # In seconds
 SUBNET = '192.168.0'
+
 
 def arg_init():
 	parser = argparse.ArgumentParser()
@@ -30,11 +32,14 @@ class comms:
 		self.sock.sendto(info.encode('utf8'), (broadcast_ip, self.UDP_PORT))  				
 
 
-	def client_listen_for_info(self):
-		'''Client-side'''
+	def client_bind(self):
 		print(f"Waiting for a vnc server on {SUBNET}.255:{self.UDP_PORT}...")
 		broadcast_ip = SUBNET + ".255"
 		self.sock.bind((broadcast_ip, self.UDP_PORT))  # The 'broadcast' ip should be sub.net.addr.255.
+
+
+	def client_listen_for_info(self):
+		'''Client-side'''
 		data, addr = self.sock.recvfrom(1024)  # I'm pretty sure this is blocking: which I want here...
 		print(f"Got server info: {data.decode('utf8')} from {addr}")	
 		return data.decode('utf8')
@@ -44,6 +49,7 @@ class client:
 	def __init__(self):
 		self.server_infos = []	
 		self.com = comms("c")  # Too hackey: TODO: something better!
+		self.com.client_bind()
 
 	def run_main_loop(self):
 		while(True):
@@ -53,10 +59,23 @@ class client:
 				return None
 			if server_info not in self.server_infos:
 				self.server_infos.append(server_info)
-			server_ip = server_info.split()[0]
-			vnc_port = server_info.split()[1]
-			vnc_viewer_command = f"vncviewer {server_ip}::{vnc_port} &"
-			subprocess.run(vnc_viewer_command.split())
+			else:
+				#print("Already connected. Just continue and see what else comes in.")
+				continue
+			args = [server_info]
+			client_thread = threading.Thread(target=self.vnc_viewer_thread_start, args=args)	
+			client_thread.start()
+
+
+	def vnc_viewer_thread_start(self, server_info)->None:
+		print(f"Starting new subprocess thread from server_info: {server_info}")
+		server_ip = server_info.split()[0]
+		vnc_port = server_info.split()[1]
+		vnc_viewer_command = f"vncviewer {server_ip}::{vnc_port}"
+		completed_process = subprocess.run(vnc_viewer_command.split())
+		# TODO: How can I get a "lock" to ther server info structure?
+		# Remove this server from the list if vncviewer closes, so we can re-connect automagically still. Is this a good idea?
+		self.server_infos = [x for x in self.server_infos if x != server_info]	
 
 
 class server:
@@ -69,19 +88,21 @@ class server:
 	vnc_stop_command = "killall x11vnc"
 	
 
-	def get_server_ip(self, ip_match="192.168."):
+	def get_server_ip(self, ip_match="192.168.")->str:
 		ip_list = []
-		ip = "NotFound"  # Try to make it stoopud obvious if not found. 
+		ip = None  
 		for interface in netifaces.interfaces():  # For each interface
 			if netifaces.AF_INET in netifaces.ifaddresses(interface):  # If there's an AF_INET address for the interface
 				for link in netifaces.ifaddresses(interface)[netifaces.AF_INET]:  
 					if ip_match in link['addr']:  # If the link matches, awesome!
 						ip = link['addr']
-						# print(f"Found my ip I care about: {ip}!")	
 		return ip
 
 
 	def broadcast_server_info(self):
+		if self.ip_address is None:
+			print("Error getting server IP.")
+			return
 		info = self.ip_address
 		info += " 5900"  # TODO: use the current VNC port, it MAY be 5901, 5902, etc. if multiple x11vnc runs.
 		self.com.send_server_info(info)	
@@ -115,7 +136,21 @@ def main(args):
 		clie.run_main_loop()	
 
 
+def thread_test_start(arg1, arg2):
+	print("Started thread. If this sleeps for 5 seconds. Will the other thread continue?")
+	print(arg1)
+	time.sleep(5)
+	print("Thread done sleeping for 5 seconds.")
+
+
+def thread_test():
+	thread = threading.Thread(target=thread_test_start, args=(['one', 'two']))
+	thread.start()
+	print("Thread run called.")
+
+
 if __name__ == "__main__":
 	args = arg_init()
+	#thread_test()
 	main(args)
 
