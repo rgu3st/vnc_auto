@@ -72,7 +72,7 @@ class client:
 				return None
 			if server_info not in self.server_infos:
 				# I *think* I need this since I'm spinning off the vncviewer stuff on a seperate thread that also touches this list
-				self.server_infos_lock.aquire()
+				self.server_infos_lock.acquire()
 				self.server_infos.append(server_info)
 				self.server_infos_lock.release()
 			else:
@@ -92,7 +92,7 @@ class client:
 		# Remove this server from the list if vncviewer closes, so we can re-connect automagically still. 
 		# TODO: Ask if this is this a good idea?
 		# Lock in case two threads end at the same time.
-		self.server_infos_lock.aquire()
+		self.server_infos_lock.acquire()
 		self.server_infos = [x for x in self.server_infos if x != server_info]	
 		self.server_infos_lock.release()
 
@@ -158,6 +158,7 @@ def main(args):
 		quit_input = input("\nType 'q' then Return/Enter at any time to stop.\n\n")
 		if quit_input == 'q' or 'quit' or 'exit' or 'stop':
 			serv.is_running = False
+			print("quiting...")
 			serv.stop()
 	elif args.c:
 		print("Just ctrl+c to quit for now...")  # TODO: gracefully close?
