@@ -55,7 +55,7 @@ class client:
 				self.server_infos.append(server_info)
 			server_ip = server_info.split()[0]
 			vnc_port = server_info.split()[1]
-			vnc_viewer_command = f"vncviewer {server_ip}::{vnc_port}"
+			vnc_viewer_command = f"vncviewer {server_ip}::{vnc_port} &"
 			subprocess.run(vnc_viewer_command.split())
 
 
@@ -92,7 +92,7 @@ class server:
 		subprocess.run(server.vnc_stop_command.split())
 	
 
-	def start(self):
+	def run_main_loop(self):
 		is_running = True
 		subprocess.run(server.vnc_start_command.split()) 
 		while is_running:
@@ -106,7 +106,7 @@ def main(args):
 		return
 	if args.s:
 		serv = server()
-		serv.start()
+		serv.run_main_loop()
 		quit_input = input("\nType 'q' then Return/Enter to stop.\n")
 		if quit_input == 'q':
 			server.stop()
